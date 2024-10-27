@@ -149,6 +149,13 @@
                 android:gravity="top|start"
                 android:inputType="textMultiLine" />
 
+            <!-- Select Image Button -->
+            <Button
+                android:id="@+id/select_image_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="15dp"
+                android:text="Select Image" />
 
             <!-- Create Event Button -->
             <Button

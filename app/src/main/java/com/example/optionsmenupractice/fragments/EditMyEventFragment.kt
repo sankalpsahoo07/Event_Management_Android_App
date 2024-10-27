@@ -1,6 +1,5 @@
 package com.example.optionsmenupractice.fragments
 
-import android.os.AsyncTask
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,18 +9,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.optionsmenupractice.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * A simple [Fragment] subclass.
- * Use the [EditMyEventFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class EditMyEventFragment : Fragment() {
-
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -29,101 +26,107 @@ class EditMyEventFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_edit_my_event, container, false)
 
-        val nametxt : TextView =  view.findViewById(R.id.nameEditText)
-        val typetxt : TextView =  view.findViewById(R.id.typeEditText)
-        val datetxt : TextView =  view.findViewById(R.id.dateEditText)
-        val starttxt : TextView =  view.findViewById(R.id.startEditText)
-        val finishtxt : TextView =  view.findViewById(R.id.finishEditText)
-        val infotxt : TextView =  view.findViewById(R.id.infoEditText)
+        val nametxt: TextView = view.findViewById(R.id.nameEditText)
+        val typetxt: TextView = view.findViewById(R.id.typeEditText)
+        val datetxt: TextView = view.findViewById(R.id.dateEditText)
+        val starttxt: TextView = view.findViewById(R.id.startEditText)
+        val finishtxt: TextView = view.findViewById(R.id.finishEditText)
+        val infotxt: TextView = view.findViewById(R.id.infoEditText)
 
+        // Retrieve event data from arguments
         val bundle = arguments
-        val id = bundle?.getString("event_id")
-        var name = bundle?.getString("event_name")
-        var type = bundle?.getString("event_type")
-        var date = bundle?.getString("event_date")
-        var start = bundle?.getString("event_start")
-        var finish = bundle?.getString("event_finish")
-        var info = bundle?.getString("event_info")
+        val id = bundle?.getString("event_id", "0") // Default to "0"
+        val name = bundle?.getString("event_name", "")
+        val type = bundle?.getString("event_type", "")
+        val date = bundle?.getString("event_date", "")
+        val start = bundle?.getString("event_start", "")
+        val finish = bundle?.getString("event_finish", "")
+        val info = bundle?.getString("event_info", "")
 
+        // Set initial values to the text views
+        nametxt.text = name ?: ""
+        typetxt.text = type ?: ""
+        datetxt.text = date ?: ""
+        starttxt.text = start ?: ""
+        finishtxt.text = finish ?: ""
+        infotxt.text = info ?: ""
 
-        nametxt.text = name
-        typetxt.text = type
-        datetxt.text = date
-        starttxt.text = start
-        finishtxt.text = finish
-        infotxt.text = info
+        val submit: Button = view.findViewById(R.id.submit)
 
-        val submit : Button = view.findViewById(R.id.submit)
+        submit.setOnClickListener {
+            // Get updated values from the text fields
+            val updatedName = nametxt.text.toString()
+            val updatedType = typetxt.text.toString()
+            val updatedDate = datetxt.text.toString()
+            val updatedStart = starttxt.text.toString()
+            val updatedFinish = finishtxt.text.toString()
+            val updatedInfo = infotxt.text.toString()
 
-        submit.setOnClickListener{
-
-            name = nametxt.text.toString()
-            type = typetxt.text.toString()
-            date = datetxt.text.toString()
-            start = starttxt.text.toString()
-            finish = finishtxt.text.toString()
-            info = infotxt.text.toString()
-
-            val manageReq = InsertEventTask()
-            manageReq.execute(name, type, date, start, finish, info, id)
-            Toast.makeText(context, "Successfully Updated Your Event Details", Toast.LENGTH_LONG).show()
-
+            // Start network task with coroutines
+            if (id != null) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val result = updateEvent(
+                        updatedName,
+                        updatedType,
+                        updatedDate,
+                        updatedStart,
+                        updatedFinish,
+                        updatedInfo,
+                        id
+                    )
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, result, Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
         }
 
-        // Inflate the layout for this fragment
         return view
     }
 
-    inner class InsertEventTask : AsyncTask<String, Void, String>() {
+    private suspend fun updateEvent(
+        eventName: String,
+        eventType: String,
+        eventDate: String,
+        eventStart: String,
+        eventFinish: String,
+        eventInfo: String,
+        eventId: String
+    ): String {
+        val url = URL("http://10.0.2.2:8888/ManageEvents.php")
+        val urlConnection = url.openConnection() as HttpURLConnection
+        return try {
+            urlConnection.doOutput = true
+            urlConnection.requestMethod = "POST"
 
-        override fun doInBackground(vararg params: String): String {
-            val eventName = params[0]
-            val eventtype = params[1]
-            val eventdate = params[2]
-            val eventstart = params[3]
-            val eventfinish = params[4]
-            val eventinfo = params[5]
-            val eventid = params[6]
+            // Prepare post data
+            val postData = "event_id=$eventId&event_name=$eventName&event_type=$eventType&event_date=$eventDate&event_start=$eventStart&event_finish=$eventFinish&event_info=$eventInfo"
 
-
-            val url = URL("http://10.0.2.2:8888/ManageEvents.php")
-            val urlConnection = url.openConnection() as HttpURLConnection
-            try {
-                urlConnection.doOutput = true
-                urlConnection.requestMethod = "POST"
-
-                val postData = "event_id=$eventid&event_name=$eventName&event_type=$eventtype&event_date=$eventdate&event_start=$eventstart&event_finish=$eventfinish&event_info=$eventinfo"
-
-                val outputStream = urlConnection.outputStream
+            // Send post data
+            urlConnection.outputStream.use { outputStream ->
                 outputStream.write(postData.toByteArray())
                 outputStream.flush()
+            }
 
-                val responseCode = urlConnection.responseCode
-                return if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val reader = BufferedReader(InputStreamReader(urlConnection.inputStream))
-                    val response = StringBuffer()
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        response.append(line)
-                    }
-                    reader.close()
-                    response.toString()
-                } else {
-//                    Toast.makeText(context, "There has been an issue. Please try again later", Toast.LENGTH_LONG).show()
-                    "HTTP Error: $responseCode"
+            val responseCode = urlConnection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                // Read response
+                val reader = BufferedReader(InputStreamReader(urlConnection.inputStream))
+                val response = StringBuilder()
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    response.append(line)
                 }
-            } finally {
-                urlConnection.disconnect()
-            }
-        }
-
-        override fun onPostExecute(result: String) {
-            super.onPostExecute(result)
-            if (result == "Event updated successfully") {
-//                Toast.makeText(context, "Event Updated Successfully", Toast.LENGTH_LONG).show()
+                reader.close()
+                response.toString()
             } else {
-//                Toast.makeText(context, "There has been an issue. Please try again later", Toast.LENGTH_LONG).show()
+                "HTTP Error: $responseCode"
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "Error: ${e.message}"
+        } finally {
+            urlConnection.disconnect()
         }
     }
 }

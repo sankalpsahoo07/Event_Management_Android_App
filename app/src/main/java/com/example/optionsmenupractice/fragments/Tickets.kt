@@ -15,10 +15,9 @@ import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.Volley
 import com.example.optionsmenupractice.R
 
-
 class Tickets : Fragment() {
 
-    private lateinit var user_id : String
+    private lateinit var user_id: String
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: MyTicketsAdapter
 
@@ -27,20 +26,27 @@ class Tickets : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_tickets, container, false)
-
         recyclerView = view.findViewById(R.id.recyclerview)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.setHasFixedSize(true)
 
-        // Initialize transactionList here
+        // Initialize transactionList and adapter
         val transactionList = ArrayList<MyTicketsModel>()
+        adapter = MyTicketsAdapter(transactionList)
+        recyclerView.adapter = adapter
 
+        // Fetch the user ID from bundle
         val bundle = arguments
         user_id = bundle?.getInt("user_id").toString()
 
+        if (user_id.isNullOrEmpty()) {
+            Toast.makeText(requireContext(), "Invalid User ID", Toast.LENGTH_SHORT).show()
+            return view
+        }
+
+        // Fetch data
         storeDataInArray(transactionList)
 
-        // Inflate the layout for this fragment
         return view
     }
 
@@ -65,7 +71,6 @@ class Tickets : Fragment() {
                         val eventInfo = jsonObject.getString("event_info")
                         val ticketno = jsonObject.getString("ticket_quantity")
 
-
                         val transaction = MyTicketsModel().apply {
                             setEventId(eventID.toInt())
                             setTicketNo(ticketno.toInt())
@@ -78,8 +83,8 @@ class Tickets : Fragment() {
                         transactionList.add(transaction)
                     }
 
-                    adapter = MyTicketsAdapter(transactionList)
-                    recyclerView.adapter = adapter
+                    // Notify the adapter of data changes
+                    adapter.notifyDataSetChanged()
 
                 } catch (e: Exception) {
                     Toast.makeText(
@@ -97,5 +102,4 @@ class Tickets : Fragment() {
 
         requestQueue.add(jsonArrayRequest)
     }
-
 }

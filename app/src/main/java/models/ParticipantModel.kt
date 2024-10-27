@@ -1,54 +1,35 @@
 package models
 
-class ParticipantModel {
+data class ParticipantModel(
+    var name: String = "",
+    var email: String = "",
+    var phoneNo: Long = 0,
+    var promoCode: String = "",
+    var quantity: Int = 0
+)
 
-    private var name : String = ""
-    private var email : String = ""
-    private var phone_no : Int = 0
-    private var promocode : String = ""
-    private var quantity : Int = 0
+fun main() {
+    // Creating an instance of ParticipantModel
+    val participant = ParticipantModel(
+        name = "Alice Johnson",
+        email = "alice.johnson@example.com",
+        phoneNo = 9876543210,
+        promoCode = "WELCOME10",
+        quantity = 3
+    )
 
-     fun setName(name : String){
-        this.name = name
-    }
+    // Accessing properties
+    println("Name: ${participant.name}") // Output: Name: Alice Johnson
+    println("Email: ${participant.email}") // Output: Email: alice.johnson@example.com
+    println("Phone No: ${participant.phoneNo}") // Output: Phone No: 9876543210
+    println("Promo Code: ${participant.promoCode}") // Output: Promo Code: WELCOME10
+    println("Quantity: ${participant.quantity}") // Output: Quantity: 3
 
-     fun getName() : String{
-        return this.name
-    }
+    // Updating the quantity
+    participant.quantity += 2
+    println("Updated Quantity: ${participant.quantity}") // Output: Updated Quantity: 5
 
-     fun setEmail(email : String){
-        this.email = email
-    }
-
-     fun getEmail() : String{
-        return this.email
-    }
-
-     fun setPhoneNo(phoneno : Int){
-        this.phone_no = phoneno
-    }
-
-     fun getPhoneNo() : Int{
-        return this.phone_no
-    }
-
-     fun setPromoCode(promocode : String){
-        this.promocode = promocode
-    }
-
-     fun getPromoCode() : String{
-        return this.promocode
-    }
-
-     fun setQuantity(quantity : Int){
-        this.quantity = quantity
-    }
-
-     fun getQuantity() : Int{
-        return this.quantity
-    }
-
-
-
-
+    // Copying the instance with modified quantity
+    val newParticipant = participant.copy(quantity = 4)
+    println("New Participant Quantity: ${newParticipant.quantity}") // Output: New Participant Quantity: 4
 }

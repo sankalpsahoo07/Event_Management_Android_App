@@ -4,24 +4,20 @@ import models.ParticipantModel
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.optionsmenupractice.R
+import com.example.optionsmenupractice.databinding.ParticipantsRowBinding // Import your generated binding class
 
 class ParticipantsRecyclerAdapter(
     private var participantList: ArrayList<ParticipantModel>
 ) : RecyclerView.Adapter<ParticipantsRecyclerAdapter.MyViewHolder>() {
 
-
-    override fun onCreateViewHolder(
-        parent: ViewGroup,
-        viewType: Int
-    ): ParticipantsRecyclerAdapter.MyViewHolder {
-        val itemView = LayoutInflater.from(parent.context).inflate(R.layout.participants_row, parent, false)
-        return MyViewHolder(itemView)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
+        val binding = ParticipantsRowBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return MyViewHolder(binding)
     }
 
-    override fun onBindViewHolder(holder: ParticipantsRecyclerAdapter.MyViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         val currentItem = participantList[position]
         holder.bind(currentItem)
     }
@@ -32,28 +28,16 @@ class ParticipantsRecyclerAdapter(
     }
 
     override fun getItemCount(): Int {
-      return participantList.size
+        return participantList.size
     }
 
-    inner class MyViewHolder(itemView: View
-    ) : RecyclerView.ViewHolder(itemView) {
-        private lateinit var currentItem: ParticipantModel
-        val username: TextView = itemView.findViewById(R.id.username)
-        val ticketQuantity: TextView = itemView.findViewById(R.id.ticket_quantity)
-        val userEmail : TextView = itemView.findViewById(R.id.email)
-        val phoneNo : TextView = itemView.findViewById(R.id.phoneno)
-
-
-
+    inner class MyViewHolder(private val binding: ParticipantsRowBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: ParticipantModel) {
-            currentItem = item
-            username.text = item.getName()
-            ticketQuantity.text = "${item.getQuantity()}"
-            val emailtxt = "Email: ${item.getEmail()}"
-            userEmail.text = emailtxt
-            val phonetxt = "Phone Number: ${item.getPhoneNo()}"
-            phoneNo.text = phonetxt
+            // Set the participant details in the corresponding TextViews
+            binding.username.text = item.name           // Access property directly
+            binding.ticketQuantity.text = "${item.quantity}" // Access property directly
+            binding.email.text = "Email: ${item.email}" // Access property directly
+            binding.phoneno.text = "Phone Number: ${item.phoneNo}" // Access property directly
         }
     }
-
 }

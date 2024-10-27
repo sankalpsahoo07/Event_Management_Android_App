@@ -12,50 +12,62 @@ import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.android.volley.Request
 import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.Volley
-import com.example.optionsmenupractice.R
+import com.example.optionsmenupractice.databinding.FragmentEventParticipantsBinding
 import saved_instance_data.ParticipantsViewModel
 import saved_instance_data.SharedViewModel
 
-
 class EventParticipants : Fragment() {
 
-    private lateinit var participantList : ArrayList<ParticipantModel>
-    private lateinit var recyclerView: RecyclerView
+    private var _binding: FragmentEventParticipantsBinding? = null
+    private val binding get() = _binding!!
+
+    private lateinit var participantList: ArrayList<ParticipantModel>
     private lateinit var adapter: ParticipantsRecyclerAdapter
     private val requestAllEvents: RequestAllEvents = RequestAllEvents()
     private val sharedViewModel: SharedViewModel by activityViewModels()
     private val participantsViewModel: ParticipantsViewModel by activityViewModels()
-    private var userId : Int = 0
-    private var eventid : Int = 0
+    private var userId: Int = 0
+    private var eventid: Int = 0
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_event_participants, container, false)
-        // Inflate the layout for this fragment
-        recyclerView = view.findViewById(R.id.recyclerview)
-        recyclerView.layoutManager = LinearLayoutManager(context)
-        recyclerView.setHasFixedSize(true)
-        participantList = ArrayList()
-
-        val bundle = arguments
-
-         eventid = bundle?.getInt("event_id")!!
-
-        initalizeEmptyAdapter()
-
-        storeDataInArray()
-
-
-        return view
+    ): View {
+        _binding = FragmentEventParticipantsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    private fun storeDataInArray() {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        eventid = arguments?.getInt("event_id") ?: 0
+
+        setupRecyclerView()
+        loadParticipantsData()
+
+        // Observe the userId
+        sharedViewModel.userId.observe(viewLifecycleOwner, Observer { userId ->
+            this.userId = userId
+            loadParticipantsData() // Reload data if userId changes
+        })
+
+        // Observe changes in the participants list
+        participantsViewModel.participantsList.observe(viewLifecycleOwner, Observer { participants ->
+            adapter.updateData(participants)
+        })
+    }
+
+    private fun setupRecyclerView() {
+        participantList = ArrayList()
+        adapter = ParticipantsRecyclerAdapter(participantList)
+        binding.recyclerview.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerview.adapter = adapter
+    }
+
+    private fun loadParticipantsData() {
         val url = "http://10.0.2.2:8888/MyParticipants.php?eventid=$eventid"
         val requestQueue = Volley.newRequestQueue(requireContext())
 
@@ -68,64 +80,30 @@ class EventParticipants : Fragment() {
                     participantList.clear()
                     for (i in 0 until response.length()) {
                         val jsonObject = response.getJSONObject(i)
-                        val name = jsonObject.getString("participant_name")
-                        val email = jsonObject.getString("participant_email")
-                        val quantity = jsonObject.getString("ticket_quantity")
-                        val phoneno = jsonObject.getInt("participant_phone")
-
-                        val event = ParticipantModel().apply {
-                            setName(name)
-                            setEmail(email)
-                            setQuantity(quantity.toInt())
-                            setPhoneNo(phoneno)
-                        }
+                        val event = ParticipantModel(
+                            name = jsonObject.getString("participant_name"),
+                            email = jsonObject.getString("participant_email"),
+                            quantity = jsonObject.getInt("ticket_quantity"), // Make sure this is an Int
+                            phoneNo = jsonObject.getInt("participant_phone").toLong()
+                        )
                         participantList.add(event)
                     }
                     participantsViewModel.participantsList.value = participantList
-
-                    if (!::adapter.isInitialized) {
-                        adapter = ParticipantsRecyclerAdapter(participantList)
-                        recyclerView.adapter = adapter
-
-                    } else {
-                        adapter.notifyDataSetChanged()
-                    }
+                    adapter.notifyDataSetChanged()
                 } catch (e: Exception) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error parsing JSON: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Error parsing JSON: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             },
             { error ->
-                Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         )
 
         requestQueue.add(jsonArrayRequest)
-
-
     }
 
-    private fun initalizeEmptyAdapter() {
-        // Initialize the adapter with an empty list initially
-        adapter = ParticipantsRecyclerAdapter(participantList)
-        recyclerView.adapter = adapter
-
-        // Observe the userId
-        sharedViewModel.userId.observe(viewLifecycleOwner, Observer { userId ->
-            this.userId = userId
-            storeDataInArray()
-        })
-
-        // Observe changes in the event list
-        participantsViewModel.participantsList.observe(viewLifecycleOwner, Observer { events ->
-            adapter.updateData(events)
-        })
-
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null // Clear binding reference to avoid memory leaks
     }
-
-
 }

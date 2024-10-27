@@ -1,71 +1,42 @@
 package models
 
-class MyEventsModel {
-
-
-    private var eventid: Int? = null
-    private var eventname: String = ""
-    private var eventtype: String = ""
-    private var imgUri: String = ""
-    private var eventstarttime: String = ""
-    private var eventfinishtime: String = ""
-    private var eventdescription: String = ""
-
-    // Setter methods
-    fun setEventId(id: Int?) {
-        this.eventid = id
+class MyEventsModel(
+    private var _event_id: Int,
+    private var _event_name: String,
+    private var _event_type: String,
+    private var _event_start: String,
+    private var _event_finish: String,
+    private var _event_info: String
+) {
+    fun setEventId(eventId: Int) {
+        _event_id = eventId
     }
 
-    fun setEventName(name: String) {
-        this.eventname = name
+    fun setEventName(eventName: String) {
+        _event_name = eventName
     }
 
-    fun setEventType(type: String) {
-        this.eventtype = type
+    fun setEventType(eventType: String) {
+        _event_type = eventType
     }
 
-//    fun setImageURI(uri: String){
-//        this.imgUri = uri
-//    }
-
-    fun setEventStartTime(startTime: String) {
-        this.eventstarttime = startTime
+    fun setEventStartTime(eventStart: String) {
+        _event_start = eventStart
     }
 
-    fun setEventFinishTime(finishTime: String) {
-        this.eventfinishtime = finishTime
+    fun setEventFinishTime(eventFinish: String) {
+        _event_finish = eventFinish
     }
 
-    fun setEventDescription(eventdescription: String) {
-        this.eventdescription = eventdescription
+    fun setEventDescription(eventInfo: String) {
+        _event_info = eventInfo
     }
 
-    // Getter methods
-//    fun getImageURI(): String {
-//        return this.imgUri
-//    }
-
-    fun getEventId(): Int? {
-        return this.eventid
-    }
-
-    fun getEventName(): String {
-        return this.eventname
-    }
-
-    fun getEventType(): String {
-        return this.eventtype
-    }
-
-    fun getEventStartTime(): String {
-        return this.eventstarttime
-    }
-
-    fun getEventFinishTime(): String {
-        return this.eventfinishtime
-    }
-
-    fun getEventDescription(): String {
-        return this.eventdescription
-    }
+    // Getters
+    fun getEventId(): Int = _event_id
+    fun getEventName(): String = _event_name
+    fun getEventType(): String = _event_type
+    fun getEventStartTime(): String = _event_start
+    fun getEventFinishTime(): String = _event_finish
+    fun getEventDescription(): String = _event_info
 }

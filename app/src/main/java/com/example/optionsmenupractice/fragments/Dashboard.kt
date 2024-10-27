@@ -18,91 +18,45 @@ class Dashboard : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
         val view = inflater.inflate(R.layout.fragment_dashboard, container, false)
 
-        val search : CardView = view.findViewById(R.id.search)
-        val popular : CardView = view.findViewById(R.id.popular)
-        val profile : CardView = view.findViewById(R.id.profile)
-        val tickets : CardView = view.findViewById(R.id.tickets)
-        val manageevent : CardView = view.findViewById(R.id.manageevent)
-        val myevent : CardView = view.findViewById(R.id.myevents)
+        val search: CardView = view.findViewById(R.id.search)
+        val popular: CardView = view.findViewById(R.id.popular)
+        val profile: CardView = view.findViewById(R.id.profile)
+        val tickets: CardView = view.findViewById(R.id.tickets)
+        val manageEvent: CardView = view.findViewById(R.id.manageevent)
+        val myEvent: CardView = view.findViewById(R.id.myevents)
 
-        val bundle = arguments
+        // Get user_id from arguments safely
+        val userId = arguments?.getString("user_id")?.toIntOrNull()
 
-        val user_id : Int? = bundle?.getString("user_id")?.toInt()
-
-
-        user_id?.let {
+        // Update the shared ViewModel with user ID
+        userId?.let {
             sharedViewModel.userId.value = it
         }
 
-
-        val bundle_forward = Bundle()
-
-        sharedViewModel.userId.value?.let {
-            bundle_forward.putInt("user_id", it)
+        // Bundle to pass the user ID to other fragments
+        val bundleForward = Bundle().apply {
+            userId?.let { putInt("user_id", it) }
+            sharedViewModel.userId.value?.let { putInt("user_id", it) }
         }
 
-        if (user_id != null) {
-            bundle_forward.putInt("user_id", user_id)
-        }
+        // Set up click listeners for navigation
+        search.setOnClickListener { navigateToFragment(HomeFragment(), bundleForward) }
+        popular.setOnClickListener { navigateToFragment(PopularFragment(), bundleForward) }
+        profile.setOnClickListener { navigateToFragment(ProfileFragment(), bundleForward) }
+        tickets.setOnClickListener { navigateToFragment(Tickets(), bundleForward) }
+        manageEvent.setOnClickListener { navigateToFragment(ManageEvents(), bundleForward) }
+        myEvent.setOnClickListener { navigateToFragment(MyEvents(), bundleForward) }
 
-        search.setOnClickListener{
-
-
-            dashboard_navigation(HomeFragment(), bundle_forward)
-
-        }
-
-        popular.setOnClickListener{
-
-            dashboard_navigation(PopularFragment(), bundle_forward)
-
-        }
-
-
-        profile.setOnClickListener{
-
-            dashboard_navigation(ProfileFragment(), bundle_forward)
-
-        }
-
-
-        tickets.setOnClickListener{
-
-            dashboard_navigation(Tickets(), bundle_forward)
-
-        }
-
-        manageevent.setOnClickListener{
-
-
-            dashboard_navigation(ManageEvents(), bundle_forward)
-
-        }
-
-        myevent.setOnClickListener{
-
-            dashboard_navigation(MyEvents(), bundle_forward)
-
-        }
-
-
-
-        // Inflate the layout for this fragment
         return view
     }
 
-
-    fun dashboard_navigation(fragment : Fragment, bundle : Bundle){
-
+    private fun navigateToFragment(fragment: Fragment, bundle: Bundle) {
         fragment.arguments = bundle
-        fragmentManager?.beginTransaction()
-            ?.replace(R.id.fragment_container, fragment)
-            ?.addToBackStack("null")
-            ?.commit()
-
+        parentFragmentManager.beginTransaction()
+            .replace(R.id.fragment_container, fragment)
+            .addToBackStack(null)
+            .commit()
     }
-
 }

@@ -6,148 +6,153 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.net.Uri
+import android.util.Log
+import models.PopularEventModel
 
+class DBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
-class DBHelper(context: Context) : SQLiteOpenHelper(context, "Userdata", null, 4) {
-
-    private lateinit var cursor: Cursor
-
-    // Define your table creation SQL statements
     private val CREATE_TABLE_USERDATA = """
-            CREATE TABLE Userdata (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT,
-                firstname TEXT,
-                lastname TEXT,
-                password TEXT
-            )
-        """
+        CREATE TABLE Userdata (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            firstname TEXT NOT NULL,
+            lastname TEXT NOT NULL,
+            password TEXT NOT NULL
+        )
+    """
 
-    private val  CREATE_TABLE_EVENTS = """
-            CREATE TABLE Events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                event_id TEXT,
-                event_name TEXT,
-                event_type TEXT,
-                event_start TEXT,
-                event_finish TEXT,
-                event_info TEXT,
-                image_uri TEXT NOT NULL
-            )
-        """
+    companion object {
+        private const val DATABASE_VERSION = 5 // Ensure this version is consistent to apply changes
+        private const val DATABASE_NAME = "Userdata.db"
+        private const val TABLE_EVENTS = "Events"
 
+        // Column names
+        private const val COLUMN_ID = "id"
+        private const val COLUMN_USER_ID = "user_id"
+        private const val COLUMN_EVENT_NAME = "event_name"
+        private const val COLUMN_EVENT_TYPE = "event_type"
+        private const val COLUMN_EVENT_DATE = "event_date"
+        private const val COLUMN_EVENT_START = "event_start"
+        private const val COLUMN_EVENT_FINISH = "event_finish"
+        private const val COLUMN_EVENT_INFO = "event_info"
+        private const val COLUMN_IMAGE_URI = "image_uri"
+    }
 
     override fun onCreate(db: SQLiteDatabase?) {
-        db?.execSQL(CREATE_TABLE_EVENTS)
-        db?.execSQL(CREATE_TABLE_USERDATA)
-
+        val createTableEvents = """
+            CREATE TABLE $TABLE_EVENTS (
+                $COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                $COLUMN_USER_ID INTEGER,
+                $COLUMN_EVENT_NAME TEXT NOT NULL,
+                $COLUMN_EVENT_TYPE TEXT NOT NULL,
+                $COLUMN_EVENT_DATE TEXT NOT NULL,
+                $COLUMN_EVENT_START TEXT NOT NULL,
+                $COLUMN_EVENT_FINISH TEXT NOT NULL,
+                $COLUMN_EVENT_INFO TEXT NOT NULL,
+                $COLUMN_IMAGE_URI TEXT
+            )
+        """
+        db?.execSQL(CREATE_TABLE_USERDATA) // Create Userdata table
+        db?.execSQL(createTableEvents) // Create Events table
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-        db?.execSQL("DROP TABLE IF EXISTS Userdata")
-        db?.execSQL("DROP TABLE IF EXISTS Events")
-        onCreate(db)
-    }
-
-    fun inserdata(username: String, firstname : String, lastname : String, password : String): Boolean {
-
-         val p0 = this.writableDatabase
-         val cv = ContentValues()
-        cv.put("username", username)
-        cv.put("firstname", firstname)
-        cv.put("lastname", lastname)
-        cv.put("password", password)
-        val result = p0.insert("Userdata", null, cv)
-
-
-        if (result.toInt() == -1){
-            return false
-        }else {
-            return true
-        }
-        }
-
-    fun insert_event(eventname: String, eventtype: String, eventstart: String, event_info : String ,eventfinish: String, imageUri: Uri): Boolean{
-        val p0 = this.writableDatabase
-        val cv = ContentValues()
-        cv.put("event_name", eventname)
-        cv.put("event_type", eventtype)
-        cv.put("event_start", eventstart)
-        cv.put("event_finish", eventfinish)
-        cv.put("event_info", event_info)
-        cv.put("image_uri", imageUri.toString())
-
-        val result = p0.insert("Events", null, cv)
-        p0.close()
-
-        if (result.toInt() == -1){
-            return false
-        }else {
-            return true
-        }
-
-    }
-
-    fun checkuserpass(username: String, password: String): Boolean {
-        val p0 = this.writableDatabase
-        val query = "SELECT * FROM Userdata WHERE username=? AND password=?"
-        val cursor = p0.rawQuery(query, arrayOf(username, password))
-
-
-//        val userexists = cursor.moveToFirst()
-//
-//        if (userexists == true){
-//            cursor.close()
-//            return true
-//        }
-
-
-
-        if (cursor.count > 0){
-            cursor.close()
-            return true
-
-        }else {
-            cursor.close()
-            return false
+        if (oldVersion < newVersion) {
+            db?.execSQL("ALTER TABLE $TABLE_EVENTS ADD COLUMN $COLUMN_USER_ID INTEGER")
         }
     }
 
-    fun getUserData(username: String): Cursor{
-        val p0 = this.readableDatabase
-        val query = "SELECT * FROM Userdata WHERE username = '$username'"
-
-
-        if (p0 != null){
-            cursor = p0.rawQuery(query, null)
+    // Method to insert user data
+    fun insertData(
+        username: String,
+        firstname: String,
+        lastname: String,
+        password: String
+    ): Boolean {
+        val db = this.writableDatabase
+        val cv = ContentValues().apply {
+            put("username", username)
+            put("firstname", firstname)
+            put("lastname", lastname)
+            put("password", password)
         }
-        return cursor
+        val result = db.insert("Userdata", null, cv)
+        db.close()
+        return result != -1L // Return true if insert was successful
+    }
+
+    // Validate user credentials
+    fun validateUser(username: String, password: String): Boolean {
+        val db = this.readableDatabase
+        val cursor: Cursor = db.rawQuery(
+            "SELECT * FROM Userdata WHERE username = ? AND password = ?",
+            arrayOf(username, password)
+        )
+
+        val isValid = cursor.count > 0
+        cursor.close() // Close cursor to prevent memory leaks
+        return isValid
+    }
+
+    // Method to insert an event
+    fun insertEvent(
+        eventName: String,
+        eventType: String,
+        eventDate: String,
+        eventStart: String,
+        eventFinish: String,
+        eventInfo: String,
+        imageUri: String?, // Use String type for image URI
+        userId: Int // Use Int type for userId
+    ): Boolean {
+        val db = this.writableDatabase
+        val cv = ContentValues().apply {
+            put(COLUMN_EVENT_NAME, eventName)
+            put(COLUMN_EVENT_TYPE, eventType)
+            put(COLUMN_EVENT_DATE, eventDate)
+            put(COLUMN_EVENT_START, eventStart)
+            put(COLUMN_EVENT_FINISH, eventFinish)
+            put(COLUMN_EVENT_INFO, eventInfo)
+            put(COLUMN_IMAGE_URI, imageUri) // Directly store String for URI
+            put(COLUMN_USER_ID, userId) // Include userId in the ContentValues
+        }
+        val result = db.insert(TABLE_EVENTS, null, cv)
+        db.close()
+        return result != -1L
     }
 
 
-    fun readAlldata(query: String): Cursor {
-        val p0 = this.readableDatabase
+    // Method to read all events
+    fun readAllEvents(): List<PopularEventModel> {
+        val eventsList = mutableListOf<PopularEventModel>()
+        val db = this.readableDatabase
+        val cursor = db.rawQuery("SELECT * FROM $TABLE_EVENTS", null)
 
+        try {
+            if (cursor.moveToFirst()) {
+                do {
+                    val eventIdIndex = cursor.getColumnIndex(COLUMN_ID)
+                    val eventNameIndex = cursor.getColumnIndex(COLUMN_EVENT_NAME)
+                    val eventTypeIndex = cursor.getColumnIndex(COLUMN_EVENT_TYPE)
 
-        if (p0 != null){
-            cursor = p0.rawQuery(query, null)
+                    if (eventIdIndex != -1 && eventNameIndex != -1 && eventTypeIndex != -1) {
+                        val event = PopularEventModel().apply {
+                            setEventId(cursor.getInt(eventIdIndex))
+                            setEventName(cursor.getString(eventNameIndex))
+                            setEventType(cursor.getString(eventTypeIndex))
+                        }
+                        eventsList.add(event)
+                    } else {
+                        Log.e("DBHelper", "Column not found")
+                    }
+                } while (cursor.moveToNext())
+            } else {
+                Log.e("DBHelper", "No events found in the database.")
+            }
+        } finally {
+            cursor.close() // Always close the cursor
         }
-        return cursor
 
+        return eventsList
     }
-
-//    private fun insertImageUriIntoDatabase(imageUri: Uri) {
-//        val contentValues = ContentValues().apply {
-//            put("image_uri", imageUri.toString()) // Store URI as string
-//            // You can add more columns if needed
-//        }
-//        val db = this.writableDatabase
-//        val newRowId = db.insert("images_table", null, contentValues)
-//        db.close()
-//
-//        if (newRowId != -1L) {
-//            // Successfully inserted
-//        } else {
-//            // Insertion failed
-//        }
 }

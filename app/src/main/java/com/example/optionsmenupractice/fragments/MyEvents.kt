@@ -3,6 +3,7 @@ package com.example.optionsmenupractice.fragments
 import adapters.MyEventsAdapter
 import models.MyEventsModel
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,149 +19,84 @@ import com.android.volley.toolbox.Volley
 import com.example.optionsmenupractice.R
 import saved_instance_data.MyEventViewModel
 
-/**
- * A simple [Fragment] subclass.
- * Use the [MyEvents.newInstance] factory method to
- * create an instance of this fragment.
- */
 class MyEvents : Fragment() {
 
-    private var userid : Int = 0
+    private var userId: Int = 0
     private lateinit var myEventsList: ArrayList<MyEventsModel>
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: MyEventsAdapter
-    private val myEventViewModel : MyEventViewModel by activityViewModels()
+    private val myEventViewModel: MyEventViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
-        val view =  inflater.inflate(R.layout.fragment_my_events, container, false)
-
+        val view = inflater.inflate(R.layout.fragment_my_events, container, false)
 
         recyclerView = view.findViewById(R.id.recyclerview)
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.setHasFixedSize(true)
         myEventsList = ArrayList()
-        initializeEmptyAdapter()
 
-        val bundle = arguments
-        if (bundle != null) {
-            userid = bundle.getInt("user_id") // Change getString to getInt
-            storeDataInArray()
+        // Initialize the adapter
+        initializeAdapter()
+
+        arguments?.let {
+            userId = it.getInt("user_id", -1) // Default to -1 if not found
+            if (userId != -1) {
+                storeDataInArray()
+            }
         }
-
 
         // Observe changes in the event list
         myEventViewModel.myEventsList.observe(viewLifecycleOwner, Observer { events ->
             adapter.updateData(events)
         })
 
-
-
-
         return view
     }
 
-    private fun initializeEmptyAdapter(){
-
+    private fun initializeAdapter() {
         adapter = MyEventsAdapter(myEventsList,
             // onItemClick function
-            { clickedItem ->
-                // Handle item click here
-                val eventId = clickedItem.getEventId()
-                val eventname = clickedItem.getEventName()
-                val eventtype = clickedItem.getEventType()
-                val eventstart = clickedItem.getEventStartTime()
-                val eventfinish = clickedItem.getEventFinishTime()
-                val eventdescription = clickedItem.getEventDescription()
-
-                val fragmentB = EventDetails()
-
-                val bundle = Bundle()
-
-                bundle.putString("event_name", eventname)
-                bundle.putString("event_type", eventtype)
-                bundle.putString("event_start", eventstart)
-                bundle.putString("event_finish", eventfinish)
-                bundle.putString("event_info", eventdescription)
-
-                displayEventDetailsFragment(fragmentB, bundle)
-
-                Toast.makeText(
-                    context,
-                    "Clicked: ${clickedItem.getEventName()}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            },
+            { clickedItem -> handleItemClick(clickedItem) },
             // onEditClick function
-            { editClicked ->
-                // Handle edit click here
-                // For example, you can open an edit fragment or perform any other action
-                // Handle edit click here
-                // For example, you can open an edit fragment or perform any other action
-                val eventId = editClicked.getEventId()
-                val eventname = editClicked.getEventName()
-                val eventtype = editClicked.getEventType()
-                val eventstart = editClicked.getEventStartTime()
-                val eventfinish = editClicked.getEventFinishTime()
-                val eventdescription = editClicked.getEventDescription()
-
-                val fragmentB = EventDetails()
-
-                val bundle = Bundle()
-                bundle.putString("event_id", eventId.toString())
-                bundle.putString("event_name", eventname)
-                bundle.putString("event_type", eventtype)
-                bundle.putString("event_start", eventstart)
-                bundle.putString("event_finish", eventfinish)
-                bundle.putString("event_info", eventdescription)
-
-                Toast.makeText(
-                    context,
-                    "Clicked: ${editClicked.getEventName()}",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                displayEventDetailsFragment(EditMyEventFragment(), bundle)
-            },
-            { viewClicked ->
-
-                // Handle item click here
-                val eventId = viewClicked.getEventId()
-                val eventname = viewClicked.getEventName()
-                val eventtype = viewClicked.getEventType()
-                val eventstart = viewClicked.getEventStartTime()
-                val eventfinish = viewClicked.getEventFinishTime()
-                val eventdescription = viewClicked.getEventDescription()
-
-                val fragmentB = EventDetails()
-
-                val bundle = Bundle()
-                if (eventId != null) {
-                    bundle.putInt("event_id", eventId)
-                }
-                bundle.putString("event_name", eventname)
-                bundle.putString("event_type", eventtype)
-                bundle.putString("event_start", eventstart)
-                bundle.putString("event_finish", eventfinish)
-                bundle.putString("event_info", eventdescription)
-
-                displayEventDetailsFragment(fragmentB, bundle)
-
-
-            }
+            { editClicked -> handleEditClick(editClicked) },
+            { viewClicked -> handleViewClick(viewClicked) }
         )
-
         recyclerView.adapter = adapter
+    }
 
+    private fun handleItemClick(clickedItem: MyEventsModel) {
+        val bundle = createBundleFromEvent(clickedItem)
+        displayEventDetailsFragment(EventDetails(), bundle)
+        Toast.makeText(context, "Clicked: ${clickedItem.getEventName()}", Toast.LENGTH_SHORT).show()
+    }
 
+    private fun handleEditClick(editClicked: MyEventsModel) {
+        val bundle = createBundleFromEvent(editClicked)
+        displayEventDetailsFragment(EditMyEventFragment(), bundle)
+        Toast.makeText(context, "Editing: ${editClicked.getEventName()}", Toast.LENGTH_SHORT).show()
+    }
 
+    private fun handleViewClick(viewClicked: MyEventsModel) {
+        val bundle = createBundleFromEvent(viewClicked)
+        displayEventDetailsFragment(EventDetails(), bundle)
+    }
+
+    private fun createBundleFromEvent(event: MyEventsModel): Bundle {
+        return Bundle().apply {
+            putInt("event_id", event.getEventId())
+            putString("event_name", event.getEventName())
+            putString("event_type", event.getEventType())
+            putString("event_start", event.getEventStartTime())
+            putString("event_finish", event.getEventFinishTime())
+            putString("event_info", event.getEventDescription())
+        }
     }
 
     private fun storeDataInArray() {
-        val url = "http://10.0.2.2:8888/MyEvents.php?user_id=$userid"
+        val url = "http://10.0.2.2:8888/MyEvents.php?user_id=$userId"
         val requestQueue = Volley.newRequestQueue(requireContext())
 
         val jsonArrayRequest = JsonArrayRequest(
@@ -172,136 +108,32 @@ class MyEvents : Fragment() {
                     myEventsList.clear()
                     for (i in 0 until response.length()) {
                         val jsonObject = response.getJSONObject(i)
-                        val event_id = jsonObject.getString("event_id")
-                        val eventName = jsonObject.getString("event_name")
-                        val eventType = jsonObject.getString("event_type")
-                        val eventStart = jsonObject.getString("event_start")
-                        val eventFinish = jsonObject.getString("event_finish")
-                        val eventInfo = jsonObject.getString("event_info")
-
-                        val event = MyEventsModel().apply {
-                            setEventId(event_id.toInt())
-                            setEventName(eventName)
-                            setEventType(eventType)
-                            setEventStartTime(eventStart)
-                            setEventFinishTime(eventFinish)
-                            setEventDescription(eventInfo)
-                        }
+                        // Instantiate MyEventsModel directly using its constructor
+                        val event = MyEventsModel(
+                            _event_id = jsonObject.getInt("event_id"),
+                            _event_name = jsonObject.getString("event_name"),
+                            _event_type = jsonObject.getString("event_type"),
+                            _event_start = jsonObject.getString("event_start"),
+                            _event_finish = jsonObject.getString("event_finish"),
+                            _event_info = jsonObject.getString("event_info")
+                        )
                         myEventsList.add(event)
                     }
-
-                    if (!::adapter.isInitialized) {
-
-//                        adapter = MyEventsAdapter(myEventsList)
-
-                        adapter = MyEventsAdapter(myEventsList,
-                            // onItemClick function
-                            { clickedItem ->
-                                // Handle item click here
-                                val eventId = clickedItem.getEventId()
-                                val eventname = clickedItem.getEventName()
-                                val eventtype = clickedItem.getEventType()
-                                val eventstart = clickedItem.getEventStartTime()
-                                val eventfinish = clickedItem.getEventFinishTime()
-                                val eventdescription = clickedItem.getEventDescription()
-
-                                val fragmentB = EventDetails()
-
-                                val bundle = Bundle()
-
-                                bundle.putString("event_name", eventname)
-                                bundle.putString("event_type", eventtype)
-                                bundle.putString("event_start", eventstart)
-                                bundle.putString("event_finish", eventfinish)
-                                bundle.putString("event_info", eventdescription)
-
-                                displayEventDetailsFragment(fragmentB, bundle)
-
-                                Toast.makeText(
-                                    context,
-                                    "Clicked: ${clickedItem.getEventName()}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            },
-                            // onEditClick function
-                            { editClicked ->
-                                // Handle edit click here
-                                // For example, you can open an edit fragment or perform any other action
-                                // Handle edit click here
-                                // For example, you can open an edit fragment or perform any other action
-                                val eventId = editClicked.getEventId()
-                                val eventname = editClicked.getEventName()
-                                val eventtype = editClicked.getEventType()
-                                val eventstart = editClicked.getEventStartTime()
-                                val eventfinish = editClicked.getEventFinishTime()
-                                val eventdescription = editClicked.getEventDescription()
-
-                                val fragmentB = EventDetails()
-
-                                val bundle = Bundle()
-                                bundle.putString("event_id", eventId.toString())
-                                bundle.putString("event_name", eventname)
-                                bundle.putString("event_type", eventtype)
-                                bundle.putString("event_start", eventstart)
-                                bundle.putString("event_finish", eventfinish)
-                                bundle.putString("event_info", eventdescription)
-
-                                Toast.makeText(
-                                    context,
-                                    "Clicked: ${editClicked.getEventName()}",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                displayEventDetailsFragment(EditMyEventFragment(), bundle)
-                            },
-                            { viewClicked ->
-
-                                // Handle item click here
-                                val eventId = viewClicked.getEventId()
-                                val eventname = viewClicked.getEventName()
-                                val eventtype = viewClicked.getEventType()
-                                val eventstart = viewClicked.getEventStartTime()
-                                val eventfinish = viewClicked.getEventFinishTime()
-                                val eventdescription = viewClicked.getEventDescription()
-
-                                val fragmentB = EventDetails()
-
-                                val bundle = Bundle()
-                                if (eventId != null) {
-                                    bundle.putInt("event_id", eventId)
-                                }
-                                bundle.putString("event_name", eventname)
-                                bundle.putString("event_type", eventtype)
-                                bundle.putString("event_start", eventstart)
-                                bundle.putString("event_finish", eventfinish)
-                                bundle.putString("event_info", eventdescription)
-
-                                displayEventDetailsFragment(fragmentB, bundle)
-
-
-                            }
-                        )
-
-                        recyclerView.adapter = adapter
-                    } else {
-                        adapter.notifyDataSetChanged()
-                    }
+                    adapter.notifyDataSetChanged() // Notify adapter of data changes
                 } catch (e: Exception) {
-                    Toast.makeText(
-                        requireContext(),
-                        "Error parsing JSON: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Log.e("MyEvents", "Error parsing JSON: ${e.message}")
+                    Toast.makeText(requireContext(), "Error parsing JSON: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             },
             { error ->
-                Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_SHORT)
-                    .show()
+                Log.e("MyEvents", "Error: ${error.message}")
+                Toast.makeText(requireContext(), "Error: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         )
 
         requestQueue.add(jsonArrayRequest)
     }
+
 
     private fun displayEventDetailsFragment(fragment: Fragment, bundle: Bundle) {
         fragment.arguments = bundle
@@ -310,13 +142,4 @@ class MyEvents : Fragment() {
             .addToBackStack(null)
             .commit()
     }
-
-    private fun displayFragment(fragment: Fragment) {
-//        fragment.arguments = bundle
-        parentFragmentManager.beginTransaction()
-            .replace(R.id.fragment_container, fragment)
-            .addToBackStack(null)
-            .commit()
-    }
-
 }

@@ -9,7 +9,6 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.optionsmenupractice.R
 
-
 class EventDetails : Fragment() {
 
     override fun onCreateView(
@@ -18,104 +17,59 @@ class EventDetails : Fragment() {
     ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_event_details, container, false)
-
-
     }
 
     override fun onStart() {
+        super.onStart() // Call the superclass method first
 
-        // Retrieve the integer from the arguments bundle
-        val eventId = arguments?.getInt("event_id")// Replace -1 with a default value if eventId is not found
-        val eventname = arguments?.getString("event_name")
-        val eventtype = arguments?.getString("event_type")
-        val start = arguments?.getString("event_start")
-        val end = arguments?.getString("event_finish")
-        val info = arguments?.getString("event_info")
-        val userid = arguments?.getInt("user_id")
-        val eventdate = arguments?.getString("event_date")
+        // Retrieve values from the arguments bundle
+        val eventId = arguments?.getInt("event_id") ?: -1 // Use -1 as a default value
+        val eventName = arguments?.getString("event_name") ?: "N/A"
+        val eventType = arguments?.getString("event_type") ?: "N/A"
+        val start = arguments?.getString("event_start") ?: "N/A"
+        val end = arguments?.getString("event_finish") ?: "N/A"
+        val info = arguments?.getString("event_info") ?: "N/A"
+        val userId = arguments?.getInt("user_id") ?: -1
+        val eventDate = arguments?.getString("event_date") ?: "N/A"
 
-        val event_id : TextView = requireView().findViewById<TextView>(R.id.eventid)
-        val event_name : TextView = requireView().findViewById<TextView>(R.id.event_name)
-        val event_type : TextView = requireView().findViewById<TextView>(R.id.eventtype)
-        val event_start : TextView = requireView().findViewById<TextView>(R.id.start_time)
-        val event_finish : TextView = requireView().findViewById<TextView>(R.id.finish_time)
-        val event_info : TextView = requireView().findViewById<TextView>(R.id.event_info)
-        val getTickets : Button = requireView().findViewById<Button>(R.id.gettickets)
-        val date : TextView = requireView().findViewById<TextView>(R.id.date)
+        // Initialize views
+        val eventIdView: TextView = requireView().findViewById(R.id.eventid)
+        val eventNameView: TextView = requireView().findViewById(R.id.event_name)
+        val eventTypeView: TextView = requireView().findViewById(R.id.eventtype)
+        val eventStartView: TextView = requireView().findViewById(R.id.start_time)
+        val eventFinishView: TextView = requireView().findViewById(R.id.finish_time)
+        val eventInfoView: TextView = requireView().findViewById(R.id.event_info)
+        val getTicketsButton: Button = requireView().findViewById(R.id.gettickets)
+        val dateView: TextView = requireView().findViewById(R.id.date)
 
+        // Set the text of the TextViews
+        eventIdView.text = eventId.toString()
+        eventNameView.text = eventName
+        eventTypeView.text = eventType
+        eventStartView.text = start
+        eventFinishView.text = end
+        eventInfoView.text = info
+        dateView.text = eventDate
 
-
-        event_id.text = eventId.toString()
-        event_name.text = eventname.toString()
-        event_type.text = eventtype.toString()
-        event_start.text = start.toString()
-        event_finish.text = end.toString()
-        event_info.text = info.toString()
-        date.text = eventdate.toString()
-
-        val ticket_bundle = Bundle()
-        if (eventId != null) {
-            ticket_bundle.putInt("event_id", eventId)
-
-            if (userid != null) {
-                ticket_bundle.putInt("user_id", userid)
-            }
-            ticket_bundle.putString("event_name", eventname)
-            ticket_bundle.putString("event_type", eventtype)
-
-
+        // Create a bundle for the GetTickets fragment
+        val ticketBundle = Bundle().apply {
+            putInt("event_id", eventId)
+            putInt("user_id", userId)
+            putString("event_name", eventName)
+            putString("event_type", eventType)
         }
 
-        getTickets.setOnClickListener{
-
-            openFragment(GetTickets(), ticket_bundle)
-
+        // Set the click listener for the Get Tickets button
+        getTicketsButton.setOnClickListener {
+            openFragment(GetTickets(), ticketBundle)
         }
-
-
-        super.onStart()
-        // Called once the fragment is visible.
     }
 
-    private fun openFragment(fragment: Fragment, bundle : Bundle) {
-
-
+    private fun openFragment(fragment: Fragment, bundle: Bundle) {
         fragment.arguments = bundle
         parentFragmentManager.beginTransaction()
             .replace(R.id.fragment_container, fragment)
-            .addToBackStack("null")
+            .addToBackStack(null)
             .commit()
     }
-
-    override fun onResume() {
-        super.onResume()
-        // Called when the fragment gains focus and is visible.
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Called when the fragment is no longer resumed.
-    }
-
-    override fun onStop() {
-        super.onStop()
-        // Called when the fragment is no longer visible.
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        // Called when the view hierarchy associated with the fragment is being removed.
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        // Called when the fragment is no longer in use.
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-        // Called when the fragment is no longer attached to its activity.
-    }
-
-
 }

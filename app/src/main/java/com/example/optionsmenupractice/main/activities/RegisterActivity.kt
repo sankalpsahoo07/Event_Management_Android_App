@@ -4,6 +4,7 @@ import Database.DBHelper
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
@@ -49,26 +50,30 @@ class RegisterActivity : AppCompatActivity() {
         registerbutton = findViewById(R.id.registerBTN)
         dbHelper = DBHelper(this)
 
-        registerbutton.setOnClickListener() {
+        registerbutton.setOnClickListener {
             val firstnametext = firstnameText.text.toString()
             val unametext = usernameText.text.toString()
             val lastnametext = lastNameText.text.toString()
             val passwordtxt = passwordText.text.toString()
-            val savedata = dbHelper.inserdata(unametext, firstnametext, lastnametext, passwordtxt)
 
-            if (TextUtils.isEmpty(unametext) || TextUtils.isEmpty(firstnametext) || TextUtils.isEmpty(
-                    lastnametext
-                ) || TextUtils.isEmpty(passwordtxt)
+            // Check for empty fields first
+            if (TextUtils.isEmpty(unametext) || TextUtils.isEmpty(firstnametext) ||
+                TextUtils.isEmpty(lastnametext) || TextUtils.isEmpty(passwordtxt)
             ) {
                 Toast.makeText(this, "Fill in registration details", Toast.LENGTH_LONG).show()
             } else {
-                register(unametext, passwordtxt, firstnametext, lastnametext)
-            }
+                // Attempt to save data in the database
+                val savedata = dbHelper.insertData(unametext, firstnametext, lastnametext, passwordtxt)
 
-//            if (savedata == true){
-//                Toast.makeText(this, "Registration Successful", Toast.LENGTH_LONG).show()
-//            }
+                if (savedata) {
+                    Toast.makeText(this, "Registration Successful", Toast.LENGTH_LONG).show()
+                    register(unametext, passwordtxt, firstnametext, lastnametext) // Call register after successful DB insertion
+                } else {
+                    Toast.makeText(this, "Registration Failed", Toast.LENGTH_LONG).show()
+                }
+            }
         }
+
 
 
     }
@@ -103,6 +108,9 @@ class RegisterActivity : AppCompatActivity() {
 
 
     }
+
+
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.register_menu, menu)

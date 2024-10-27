@@ -1,7 +1,6 @@
 package com.example.optionsmenupractice.fragments
 
 import Database.DBHelper
-import android.database.Cursor
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
@@ -16,63 +15,46 @@ import com.example.optionsmenupractice.R
 
 class PopularFragment : Fragment() {
 
-    private lateinit var popularEventsList: ArrayList<PopularEventModel>
+    private lateinit var popularEventsList: MutableList<PopularEventModel>
     private lateinit var recyclerView: RecyclerView
     private lateinit var dbHelper: DBHelper
-    private lateinit var cursor: Cursor
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_popular, container, false)
 
-        // Initialize DBHelper
+        // Initialize DBHelper and the events list
         dbHelper = DBHelper(requireContext())
-
-        // Initialize other variables
-        popularEventsList = ArrayList()
-
+        popularEventsList = mutableListOf()
 
         recyclerView = view.findViewById(R.id.recyclerview)
 
-//         Set up RecyclerView
+        // Set up RecyclerView
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.setHasFixedSize(true)
 
-        storeDataInArray()
-
-
-        // Your code to populate recyclerView or any other initialization
+        // Load data into the list
+        loadPopularEvents()
 
         return view
     }
 
-    private fun storeDataInArray() {
-        // Clear the userList to avoid duplicating data
-//        userList.clear()
+    private fun loadPopularEvents() {
+        // Clear the list to avoid duplicating data
+        popularEventsList.clear()
 
-        val query: String = "SELECT * FROM Events"
         // Read all data from the database
-        cursor = dbHelper.readAlldata(query)
+        val events = dbHelper.readAllEvents()
 
-        if (cursor.count > 0) {
-            cursor.moveToFirst()
-            while (cursor.moveToNext()) {
-                val popularEventModel = PopularEventModel()
-                popularEventModel.setEventId(cursor.getInt(0))
-                popularEventModel.setEventName(cursor.getString(2))
-                popularEventModel.setEventType(cursor.getString(3))
-                popularEventsList.add(popularEventModel)
-            }
+        if (events.isNotEmpty()) {
+            popularEventsList.addAll(events)
         } else {
             Toast.makeText(context, "No data", Toast.LENGTH_SHORT).show()
         }
 
-
-
+        // Set the adapter to the RecyclerView after loading data
         recyclerView.adapter = PopularRecyclerAdapter(popularEventsList)
-        cursor.close() // Close the cursor when done
     }
 }

@@ -9,88 +9,63 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.optionsmenupractice.R
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class SavedEventsAdapter(private var savedList: ArrayList<GeneralEventModel>,
-                         private val onItemClick: ((GeneralEventModel) -> Unit),
-                         private val onRemoveClick: ((GeneralEventModel) -> Unit)
+class SavedEventsAdapter(
+    private var savedList: List<GeneralEventModel>, // Changed to List for better flexibility
+    private val onItemClick: (GeneralEventModel) -> Unit,
+    private val onRemoveClick: (GeneralEventModel) -> Unit
 ) : RecyclerView.Adapter<SavedEventsAdapter.MyViewHolder>() {
-    override fun onCreateViewHolder(
-        parent: ViewGroup,
-        viewType: Int
-    ): SavedEventsAdapter.MyViewHolder {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyViewHolder {
         val itemView = LayoutInflater.from(parent.context).inflate(R.layout.saved_item_row, parent, false)
-        return MyViewHolder(itemView, onItemClick)
+        return MyViewHolder(itemView, onItemClick, onRemoveClick)
     }
 
-    override fun onBindViewHolder(holder: SavedEventsAdapter.MyViewHolder, position: Int) {
-        val context = holder.itemView.context
+    override fun onBindViewHolder(holder: MyViewHolder, position: Int) {
         val currentItem = savedList[position]
-
-        holder.eventname.text = currentItem.getEventName()
-//        holder.eventid.text = currentItem.getEventId().toString()
-        holder.eventtype.text = currentItem.getEventType()
-        holder.eventinfo.text = currentItem.getEventDescription()
-        holder.bind(currentItem) // Bind data to the ViewHolder
-
-        // Set onClickListener for the edit button
-        holder.remove_event.setOnClickListener {
-            onRemoveClick(currentItem)
-        }
-
-
-//        val imageUriString = currentItem.getImageURI()
-//        val imageUri = Uri.parse(imageUriString)
-
-//        if (context != null) {
-//            Glide.with(context)
-//                .load("https://cdn.pixabay.com/photo/2013/02/01/18/14/url-77169_1280.jpg")
-//                .apply(RequestOptions().override(100, 150))
-//                .error(R.drawable.baseline_error_24)
-//                .placeholder(R.drawable.baseline_downloading_24)
-//                .into(holder.imgView)
-//        }
-
-
+        holder.bind(currentItem)
     }
 
-    // Method to clear the data
-    fun clearData() {
-        savedList.clear()
-        notifyDataSetChanged()
-    }
+    override fun getItemCount(): Int = savedList.size
 
-    override fun getItemCount(): Int {
-        return savedList.size
-    }
-
-    fun updateData(newEvents: ArrayList<GeneralEventModel>) {
+    // Update the data in the adapter
+    fun updateData(newEvents: List<GeneralEventModel>) {
         savedList = newEvents
         notifyDataSetChanged()
     }
 
-    class MyViewHolder(itemView: View,
-                       onItemClick: (GeneralEventModel) -> Unit
-        ) : RecyclerView.ViewHolder(itemView) {
-        private lateinit var currentItem: GeneralEventModel
-        //        val eventid: TextView = itemView.findViewById(R.id.eventid)
-        val eventname: TextView = itemView.findViewById(R.id.eventname)
-        val eventtype: TextView = itemView.findViewById(R.id.eventtype)
-        //        public val imgView: ImageView = itemView.findViewById(R.id.imageView)
-        val eventinfo: TextView = itemView.findViewById(R.id.event_info)
-        val remove_event : FloatingActionButton = itemView.findViewById(R.id.remove_saved_item)
+    // Method to clear the data
+    fun clearData() {
+        savedList = emptyList()
+        notifyDataSetChanged()
+    }
 
+    class MyViewHolder(
+        itemView: View,
+        private val onItemClick: (GeneralEventModel) -> Unit,
+        private val onRemoveClick: (GeneralEventModel) -> Unit
+    ) : RecyclerView.ViewHolder(itemView) {
+
+        private val eventName: TextView = itemView.findViewById(R.id.eventname)
+        private val eventType: TextView = itemView.findViewById(R.id.eventtype)
+        private val eventInfo: TextView = itemView.findViewById(R.id.event_info)
+        private val removeEvent: FloatingActionButton = itemView.findViewById(R.id.remove_saved_item)
 
         init {
             itemView.setOnClickListener {
-                onItemClick.invoke(currentItem)
+                val item = it.tag as? GeneralEventModel
+                item?.let(onItemClick)
             }
         }
 
         fun bind(item: GeneralEventModel) {
-            currentItem = item
-//            eventid.text = item.getEventId().toString()
-            eventname.text = item.getEventName()
-            eventtype.text = item.getEventType()
+            itemView.tag = item // Set tag to access in onClickListener
+            eventName.text = item.getEventName()
+            eventType.text = item.getEventType()
+            eventInfo.text = item.getEventDescription()
+
+            removeEvent.setOnClickListener {
+                onRemoveClick(item)
+            }
         }
     }
-    }
-
+}

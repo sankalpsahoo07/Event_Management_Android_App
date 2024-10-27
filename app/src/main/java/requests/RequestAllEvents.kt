@@ -8,21 +8,16 @@ import okhttp3.Request
 import okhttp3.Response
 import org.json.JSONArray
 import java.io.IOException
-import java.util.ArrayList
 
 class RequestAllEvents {
 
-    lateinit var GeneralEventModel : GeneralEventModel
-
-    fun fetchEvents(onSuccess: (ArrayList<GeneralEventModel>) -> Unit, onFailure: (String) -> Unit) : ArrayList<GeneralEventModel> {
+    fun fetchEvents(onSuccess: (ArrayList<GeneralEventModel>) -> Unit, onFailure: (String) -> Unit) {
         val url = "http://10.0.2.2:8888/all_events.php"
 
-        val events = ArrayList<GeneralEventModel>()
+        val client = OkHttpClient()
         val request = Request.Builder()
             .url(url)
             .build()
-
-        val client = OkHttpClient()
 
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
@@ -41,33 +36,27 @@ class RequestAllEvents {
                     return
                 }
 
-
                 try {
                     val jsonArray = JSONArray(responseBody)
+                    val events = ArrayList<GeneralEventModel>()
 
                     for (i in 0 until jsonArray.length()) {
                         val jsonObject = jsonArray.getJSONObject(i)
-                        val eventName = jsonObject.getString("event_name")
-                        val eventType = jsonObject.getString("event_type")
-                        val eventStart = jsonObject.getString("event_start")
-                        val eventFinish = jsonObject.getString("event_finish")
-                        val eventInfo = jsonObject.getString("event_info")
-
                         val event = GeneralEventModel().apply {
-                            setEventName(eventName)
-                            setEventType(eventType)
-                            setEventStartTime(eventStart)
-                            setEventFinishTime(eventFinish)
-                            setEventDescription(eventInfo)
+                            setEventName(jsonObject.getString("event_name"))
+                            setEventType(jsonObject.getString("event_type"))
+                            setEventStartTime(jsonObject.getString("event_start"))
+                            setEventFinishTime(jsonObject.getString("event_finish"))
+                            setEventDescription(jsonObject.getString("event_info"))
                         }
                         events.add(event)
                     }
+
                     onSuccess(events)
                 } catch (e: Exception) {
                     onFailure("Error parsing JSON: ${e.message}")
                 }
             }
         })
-        return events
     }
 }
